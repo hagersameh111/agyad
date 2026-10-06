@@ -1,38 +1,148 @@
-// Mock API service - Replace URLs with your future backend endpoints (e.g., http://localhost:5000/api)
+const API_URL = "http://localhost:9000/api";
 
+const getAuthHeaders = () => {
+  const token = localStorage.getItem("adminToken");
+  return token
+     ? { "Content-Type": "application/json", Authorization: `Bearer ${token}` }
+    : { "Content-Type": "application/json" };
+};
+
+// --- AUTH ---
+export const loginAdmin = async (email, password) => {
+  try {
+    const res = await fetch(`${API_URL}/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
+    return await res.json();
+  } catch (error) {
+    console.error("Login failed:", error);
+    return { success: false, message: "فشل الاتصال بالخادم" };
+  }
+};
+
+// --- PROJECTS ---
 export const fetchProjects = async () => {
-  const response = await fetch('/api/projects.json');
-  return await response.json();
+  try {
+    const res = await fetch(`${API_URL}/projects`);
+    if (!res.ok) return []; // Return empty if server sends an error status
+    const json = await res.json();
+    return json.data || [];
+  } catch (error) {
+    console.error("Backend connection failed, falling back to empty state:", error);
+    return []; // Triggers the "Coming Soon" UI on the frontend
+  }
 };
 
 export const fetchProjectById = async (id) => {
-  const projects = await fetchProjects();
-  return projects.find(p => p.id === id);
+  try {
+    const res = await fetch(`${API_URL}/projects/${id}`);
+    if (!res.ok) return null;
+    const json = await res.json();
+    return json.data;
+  } catch (error) {
+    console.error("Backend connection failed, falling back to Not Found:", error);
+    return null; // Triggers the <NotFound /> component
+  }
 };
 
-// Admin Ready: Placeholder functions for your future Admin panel
 export const createProject = async (projectData) => {
-  // Example: await axios.post('/api/projects', projectData);
-  console.log("Simulating backend project creation:", projectData);
-  return { success: true };
+  try {
+    const res = await fetch(`${API_URL}/projects`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: JSON.stringify(projectData),
+    });
+    return await res.json();
+  } catch (error) {
+    console.error("Error creating project:", error);
+    return { success: false, message: "فشل الاتصال بالخادم" };
+  }
+};
+
+export const updateProject = async (id, projectData) => {
+  try {
+    const res = await fetch(`${API_URL}/projects/${id}`, {
+      method: "PUT",
+      headers: getAuthHeaders(),
+      body: JSON.stringify(projectData),
+    });
+    return await res.json();
+  } catch (error) {
+    console.error("Error updating project:", error);
+    return { success: false, message: "فشل الاتصال بالخادم" };
+  }
 };
 
 export const deleteProject = async (id) => {
-  // Example: await axios.delete(`/api/projects/${id}`);
-  console.log("Simulating backend project deletion for ID:", id);
-  return { success: true };
+  try {
+    const res = await fetch(`${API_URL}/projects/${id}`, {
+      method: "DELETE",
+      headers: getAuthHeaders(),
+    });
+    return await res.json();
+  } catch (error) {
+    console.error("Error deleting project:", error);
+    return { success: false, message: "فشل الاتصال بالخادم" };
+  }
 };
 
+// --- GALLERY ---
 export const fetchGallery = async () => {
-  const response = await fetch('/api/gallery.json');
-  return await response.json();
+  try {
+    const res = await fetch(`${API_URL}/gallery`);
+    if (!res.ok) return [];
+    const json = await res.json();
+    return json.data || [];
+  } catch (error) {
+    console.error("Backend connection failed, falling back to empty state:", error);
+    return []; // Triggers the "Coming Soon" UI on the gallery
+  }
+};
+
+export const createGalleryItem = async (data) => {
+  try {
+    const res = await fetch(`${API_URL}/gallery`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: JSON.stringify(data),
+    });
+    return await res.json();
+  } catch (error) {
+    return { success: false, message: "فشل الاتصال بالخادم" };
+  }
+};
+
+export const deleteGalleryItem = async (id) => {
+  try {
+    const res = await fetch(`${API_URL}/gallery/${id}`, {
+      method: "DELETE",
+      headers: getAuthHeaders(),
+    });
+    return await res.json();
+  } catch (error) {
+    return { success: false, message: "فشل الاتصال بالخادم" };
+  }
+};
+
+// --- PAGE DATA (Preserved for local JSON fallbacks) ---
+export const fetchAllProjectsPageData = async () => {
+  try {
+    const response = await fetch('/api/all-projects.json');
+    return await response.json();
+  } catch (error) {
+    console.error("Failed to load local static data:", error);
+    return null;
+  }
 };
 
 export const fetchSettings = async () => {
-  const response = await fetch('/api/settings.json');
-  return await response.json();
-};
-export const fetchAllProjectsPageData = async () => {
-  const response = await fetch('/api/all-projects.json');
-  return await response.json();
+  try {
+    const response = await fetch('/api/settings.json');
+    return await response.json();
+  } catch (error) {
+    console.error("Failed to load local static settings:", error);
+    return null;
+  }
 };
